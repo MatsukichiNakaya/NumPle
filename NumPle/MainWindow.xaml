@@ -1,0 +1,72 @@
+﻿<Window x:Class="NumPle.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:winput="clr-namespace:System.Windows.Input;assembly=PresentationCore"
+        xmlns:local="clr-namespace:NumPle"
+        mc:Ignorable="d"
+        x:Name="mainWindow"
+        Title="NumPreSolver" Height="400" Width="400">
+    <Window.Resources>
+        <winput:RoutedCommand x:Key="ExecuteCommand"/>
+        <winput:RoutedCommand x:Key="ViewCommand"/>
+        <winput:RoutedCommand x:Key="DebugCommand"/>
+        <Style x:Key="TextBlockStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontFamily" Value="Terminal"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextHintingMode" Value="Auto"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+        </Style>
+    </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource ExecuteCommand}"
+                        Executed="ExecutedCustomCommand"
+                        CanExecute="CanExecuteCustomCommand" />
+        <CommandBinding Command="{StaticResource ViewCommand}"
+                        Executed="ExecutedViewCommand"
+                        CanExecute="CanExecuteViewCommand" />
+        <CommandBinding Command="{StaticResource DebugCommand}"
+                        Executed="ExecutedDebugCommand"
+                        CanExecute="CanExecuteDebugCommand" />
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{StaticResource ExecuteCommand}"/>
+        <KeyBinding Key="V" Modifiers="Ctrl" Command="{StaticResource ViewCommand}"/>
+        <KeyBinding Key="D" Modifiers="Ctrl" Command="{StaticResource DebugCommand}"/>
+    </Window.InputBindings>
+    <Grid x:Name="guideGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid x:Name="mainGrid"
+              Grid.Row="1" Grid.Column="1"
+              Grid.RowSpan="9" Grid.ColumnSpan="9">
+
+        </Grid>
+    </Grid>
+</Window>
