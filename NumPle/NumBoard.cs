@@ -176,6 +176,7 @@ namespace NumPle
         public void Debug()
         {
             // todo: 検証中
+            //     : バグあり　候補を削除しすぎて回答できなくなる。
             // 3x3のボックス内でその行にしか入らない数字以外の数字を削除する
             SideOnlyExceptNum();
         }
@@ -628,6 +629,7 @@ namespace NumPle
                 {
                     if (!HasCandidate(this._solvTable[row + r][c + col], candidate)) { continue; }
                     
+                    // todo : 候補のマッチが2つ以上ある場合と、一つしかない場合に動作を変える必要がある
                     // 確定候補にマッチしない数値を削除
                     this._solvTable[row + r][col + c].RemoveWhere(h => !IsListMatch(h, candidate));
                 }
