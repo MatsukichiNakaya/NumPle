@@ -176,9 +176,13 @@ namespace NumPle
         public void Debug()
         {
             // todo: 検証中
-            //     : バグあり　候補を削除しすぎて回答できなくなる。
+            //     : バグあり　候補削除後に新たな候補を選択できない。
             // 3x3のボックス内でその行にしか入らない数字以外の数字を削除する
-            SideOnlyExceptNum();
+            //SideOnlyExceptNum();
+
+            // todo: 検証中
+            //     : バグあり　候補を削除しすぎて回答できなくなる。
+            OnlyOneInTheLine();
         }
 #endregion
 
@@ -372,6 +376,102 @@ namespace NumPle
         #endregion
 
         /// <summary>
+        /// 行・列内に候補が一つだけ
+        /// </summary>
+        private void OnlyOneInTheLine()
+        {
+            Int32 count = 0;
+            for (Int32 y = 0; y < GRID_LENGTH; y++)
+            {
+                var values = GetRowHash(y);
+
+                for (Int32 n = 1; n <= GRID_LENGTH; n++)
+                {
+                    count = values.CountIf(v => v == n);
+                    if (count == 1)
+                    {
+                        Int32 col = FindColPos(y, n);
+                        if (0 <= col)
+                        {
+                            this._solvTable[y][col] = new HashSet<Int32>(new Int32[] { n });
+                        }
+                    }
+                }
+            }
+
+            for (Int32 x = 0; x < GRID_LENGTH; x++)
+            {
+                var values = GetColHash(x);
+
+                for (Int32 n = 1; n <= GRID_LENGTH; n++)
+                {
+                    count = values.CountIf(v => v == n);
+                    if (count == 1)
+                    {
+                        Int32 row = FindRowPos(x, n);
+                        if (0 <= row)
+                        {
+                            this._solvTable[row][x] = new HashSet<Int32>(new Int32[] { n });
+                        }
+                    }
+                }
+
+            }
+        }
+
+        private IEnumerable<Int32> GetRowHash(Int32 row)
+        {
+            for (Int32 x = 0; x < GRID_LENGTH; x++)
+            {
+                if (this._solvTable[row][x].Count == 0) { continue; }
+                foreach (var num in this._solvTable[row][x])
+                {
+                    yield return num;
+                }
+            }
+        }
+
+        private IEnumerable<Int32> GetColHash(Int32 col)
+        {
+            for (Int32 y = 0; y < GRID_LENGTH; y++)
+            {
+                if (this._solvTable[y][col].Count == 0) { continue; }
+                foreach (var num in this._solvTable[y][col])
+                {
+                    yield return num;
+                }
+            }
+        }
+
+        private Int32 FindColPos(Int32 row, Int32 num)
+        {
+            for (Int32 x = 0; x < GRID_LENGTH; x++)
+            {
+                if (this._solvTable[row][x].Count == 0) { continue; }
+
+                if (this._solvTable[row][x].Contains(num))
+                {
+                    return x;
+                }
+            }
+            return -1;
+        }
+
+        private Int32 FindRowPos(Int32 col, Int32 num)
+        {
+            for (Int32 y = 0; y < GRID_LENGTH; y++)
+            {
+                if (this._solvTable[y][col].Count == 0) { continue; }
+
+                if (this._solvTable[y][col].Contains(num))
+                {
+                    return y;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
         /// Box内の3行を見てほかのボックスの同行の候補を削除する
         /// </summary>
         /// <remarks>
@@ -405,7 +505,7 @@ namespace NumPle
         }
 
         /// <summary>
-        /// 
+        /// 他の列を見て他列の候補を削除する
         /// </summary>
         private void SideOnlyNumCol()
         {
@@ -606,34 +706,128 @@ namespace NumPle
         /// <remarks>※要デバッグ(何問か解いて検証の必要あり)</remarks>
         private void ExcludeExceptForFixed(HashSet<Int32>[] hashList, Int32 row, Int32 col)
         {
-            UInt32 flag = 0;
-            Int32 r = -1;
-            foreach (var list in hashList)
-            {
-                r++;
-                var candidate = new List<Int32>();
-                // その行にしかない数字を絞り込む
-                foreach (var n in list)
-                {
-                    // Todo: マジックナンバー
-                    flag = HasNumHash(n, hashList[0], hashList[1], hashList[2]);
-                    if (BitCount(flag) == 1)
-                    {
-                        candidate.Add(n);
-                    }
-                }
-                // 候補が二つ以上か？
-                if (candidate.Count <= 1) { continue; }
+            var numArray = new Int32[9];
+            var boxHash = GetBoxHash(row, col);
 
-                for (Int32 c = 0; c < BOX_LENGTH; c++)
+            // 候補数が同じ数字を見つける
+            foreach (var item in boxHash)
+            {
+                numArray[item - 1]++;
+            }
+            var condiList = new List<Int32>();
+            // 候補数が2つの時
+            for (Int32 i = 0; i < numArray.Length; i++)
+            {
+                if (numArray[i] == 2)
                 {
-                    if (!HasCandidate(this._solvTable[row + r][c + col], candidate)) { continue; }
-                    
-                    // todo : 候補のマッチが2つ以上ある場合と、一つしかない場合に動作を変える必要がある
-                    // 確定候補にマッチしない数値を削除
-                    this._solvTable[row + r][col + c].RemoveWhere(h => !IsListMatch(h, candidate));
+                    condiList.Add(i + 1);
                 }
             }
+
+            if (condiList.Count != 2) { return; }
+
+            if (IsCondiSameBox(row, col, condiList.ToArray()))
+            {
+                for (Int32 y = 0; y < BOX_LENGTH; y++)
+                {
+                    for (Int32 x = 0; x < BOX_LENGTH; x++)
+                    {
+                        if (!HasCandidate(this._solvTable[row + y][col + x], condiList)) { continue; }
+                        this._solvTable[row + y][col + x].RemoveWhere(h => !IsListMatch(h, condiList));
+                    }
+                }
+            }
+            Console.WriteLine();
+
+            //UInt32 flag = 0;
+            //Int32 r = -1;
+            //foreach (var list in hashList)
+            //{
+            //    r++;
+            //    var candidate = new List<Int32>();
+            //    // その行にしかない数字を絞り込む
+            //    foreach (var n in list)
+            //    {
+            //        // Todo: マジックナンバー
+            //        flag = HasNumHash(n, hashList[0], hashList[1], hashList[2]);
+            //        if (BitCount(flag) == 1)
+            //        {
+            //            candidate.Add(n);
+            //        }
+            //    }
+            //    // 候補が二つ以上か？
+            //    if (candidate.Count <= 1) { continue; }
+
+            //    for (Int32 c = 0; c < BOX_LENGTH; c++)
+            //    {
+            //        if (!HasCandidate(this._solvTable[row + r][c + col], candidate)) { continue; }
+                    
+            //        // todo : 候補のマッチが2つ以上ある場合と、一つしかない場合に動作を変える必要がある
+            //        // 確定候補にマッチしない数値を削除
+            //        this._solvTable[row + r][col + c].RemoveWhere(h => !IsListMatch(h, candidate));
+            //    }
+            //}
+        }
+
+        /// <summary>
+        /// ボックス内に同じ候補数の数値が同じマスにあるか
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="nums"></param>
+        /// <returns></returns>
+        private Boolean IsCondiSameBox(Int32 row, Int32 col, params Int32[] nums)
+        {
+            Int32 startRow = row / 3 * BOX_LENGTH;
+            Int32 startCol = col / 3 * BOX_LENGTH;
+            Int32 sameCount = 0;
+            for (Int32 y = 0; y < BOX_LENGTH; y++)
+            {
+                for (Int32 x = 0; x < BOX_LENGTH; x++)
+                {
+                    if (this._solvTable[startRow + y][startCol + x].Count == 0) { continue; }
+
+                    // 同時チェック
+                    if (IsSameCell(startRow + y, startCol + x, nums))
+                    {
+                        sameCount++;
+                    }
+                    else
+                    {
+                        // 個別でチェック
+                        foreach (var num in nums)
+                        {
+                            if (this._solvTable[startRow + y][startCol + x].Contains(num))
+                            {
+                                // 全部同じマスではない。ぬけがある。
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return sameCount == nums.Length;
+        }
+
+        /// <summary>
+        /// 指定した数値の候補が同じマスに入っているか？
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="nums"></param>
+        /// <returns></returns>
+        private Boolean IsSameCell(Int32 row, Int32 col, params Int32[] nums)
+        {
+            if (this._solvTable[row][col].Count == 0) { return false; }
+            foreach (var n in nums)
+            {
+                // そのマスの候補にあるか？
+                if (!this._solvTable[row][col].Contains(n))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
